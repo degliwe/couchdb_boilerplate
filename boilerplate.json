@@ -1,0 +1,73 @@
+{
+   "_id": "_design/v1",
+   "id:comment": "The design document is named with our API version number (v1) so that it's very easy to hanlde API versioning and make many version of our API co-exist",
+   "language": "javascript",
+   "rewrites:comment": "This is actually where we model our API by defining rewrties rules, authorized verbs and query arguments",
+   "rewrites": [
+       {
+           "from": "/",
+           "to": "index.html",
+           "method": "GET",
+           "comment": "Default case to provide a static homepage"
+       },
+       {
+           "from": "/docs",
+           "to": "_view/docs",
+           "query": {
+               "descending": "true"
+           },
+           "method": "GET",
+           "comment": "Allows to list all 'docs', call our default view"
+       },
+       {
+           "from": "/docs/author/:author",
+           "to": "_view/docs_by_author",
+           "query": {
+               "key": ":author",
+               "descending": "true"
+           },
+           "method": "GET",
+           "comment": "Allow to list 'docs' by ':author', call our 'docs_by_author' view"
+       },
+       {
+           "from": "/docs/:doc/:attachment",
+           "to": "../../:doc/:attachment",
+           "comment": ""
+       },
+       {
+           "from": "/docs/:doc",
+           "to": "../../:doc",
+           "comment": ""
+       },
+       {
+           "from": "/docs",
+           "to": "../../",
+           "method": "POST",
+           "comment": ""
+       },
+       {
+           "from": "/changes/docs",
+           "to": "../../_changes?filter=v1/docs",
+           "method": "GET",
+           "comment": ""
+       },
+       {
+           "from": "/changes/docs/:author",
+           "to": "../../_changes?filter=v1/docs",
+           "query": {
+               "key": ":author"
+           },
+           "method": "GET",
+           "comment": ""
+       }
+   ],
+   "views": {
+       "docs": {
+           "map": "function (doc) {\n\n\tif (doc.author) {\n\n\t\tvar key = doc.author;\n\n\t\t//sort by author\n\n\t\tvar value = {\n\t\t\ttitle: doc.title,\n\t\t\tbody: doc.body\n\t\t\t// attachments: doc._attachments // uncomment this line to return attachments as well as the docs.\n\t\t};\n\n\t\temit(key, value);\n\t}\n}"
+       }
+   },
+   "filters": {
+       "docs": "/*Change feeds*/ function(doc, req) { if(doc.author == req.query.author /*req.userCtx.name*/) { return true; } return false; }"
+   },
+   "validate_doc_update": "function (newDoc, oldDoc, userCtx) {\n\n\t//is the user authenticated ?\n\tif (!userCtx.name) {\n\t\tthrow ({ unauthorized: \"only authenticated users can post\" });\n\t};\n\n\t//onDeleted skip required fields check\n\tif (newDoc._deleted && oldDoc.author == userCtx.name || userCtx.name === \"admin\") {\n\t\treturn;\n\t}\n\n\t//is user author of both revision of this document? (UPDATE)\n\tif(oldDoc && oldDoc.author != newDoc.author) {\n\t\t\tenforce(newDoc.author == userCtx.name, \"Only \" + userCtx.name +\" can edit this item\");\n\t}\n\n\t//Helper\n\tfunction require(field){\n     \t\tvar message = field + \" is required\";\n      \t\tif(!newDoc[field]){ throw({\"forbidden\":message}) }\n   \t}\n\n\t//is user author of this document? (CREATE)\n\tif (newDoc.author != userCtx.name  &&  userCtx.name != \"admin\") {\n\t\tthrow ({ unauthorized: \"You may only update your documents \" + userCtx.name });\n\t}else{\n\t\trequire(\"author\");\n\t\trequire(\"title\");\n   \t\trequire(\"body\");\n\t}\n}"
+}
