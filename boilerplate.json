@@ -12,12 +12,12 @@
        },
        {
            "from": "/docs",
-           "to": "_view/docs",
+           "to": "_view/docs_by_title",
            "query": {
-               "descending": "true"
+               "descending": "false"
            },
            "method": "GET",
-           "comment": "Allows to list all 'docs', call our default view"
+           "comment": "Allows to list all 'docs' by ascending title"
        },
        {
            "from": "/docs/author/:author",
@@ -62,7 +62,10 @@
        }
    ],
    "views": {
-       "docs": {
+       "docs_by_title": {
+           "map": "function (doc) {\n\n\tif (doc.title) {\n\n\t\tvar key = doc.title;\n\n\t\t//sort by title\n\n\t\tvar value = {\n\t\t\tauthor: doc.author,\n\t\t\tbody: doc.body\n\t\t\t// attachments: doc._attachments // uncomment this line to return attachments as well as the docs.\n\t\t};\n\n\t\temit(key, value);\n\t}\n}"
+       },
+       "docs_by_author": {
            "map": "function (doc) {\n\n\tif (doc.author) {\n\n\t\tvar key = doc.author;\n\n\t\t//sort by author\n\n\t\tvar value = {\n\t\t\ttitle: doc.title,\n\t\t\tbody: doc.body\n\t\t\t// attachments: doc._attachments // uncomment this line to return attachments as well as the docs.\n\t\t};\n\n\t\temit(key, value);\n\t}\n}"
        }
    },
